@@ -32,10 +32,11 @@ public class PayrollServiceDB {
 
 	public List<EmployeePayrollData> viewEmployeePayrollByName(String name) throws DBServiceException {
 		List<EmployeePayrollData> employeePayrollListByName = new ArrayList<>();
-		String query = String.format("select * from Employee_Payroll where name = '%s';", name);
+		String query = "select * from Employee_Payroll where name = ?";
 		try (Connection con = new PayrollService().getConnection()) {
-			Statement statement = con.createStatement();
-			ResultSet resultSet = statement.executeQuery(query);
+			PreparedStatement preparedStatement = con.prepareStatement(query);
+			preparedStatement.setString(1, name );
+			ResultSet resultSet = preparedStatement.executeQuery();
 			if (resultSet.next()) {
 				int id = resultSet.getInt(1);
 				String gender = resultSet.getString(3);
