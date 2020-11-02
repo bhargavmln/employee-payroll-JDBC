@@ -63,6 +63,21 @@ public class PayrollServiceDB {
 		}
 	}
 
+	public void updateEmployeeSalaryUsingPreparedStatement(String name, double salary) throws DBServiceException {
+		String query = "update Employee_Payroll set salary = ? where name = ?";
+		try (Connection con = new PayrollService().getConnection()) {
+			PreparedStatement preparedStatement = con.prepareStatement(query);
+			preparedStatement.setDouble(1, salary);
+			preparedStatement.setString(2, name);
+			int result = preparedStatement.executeUpdate();
+			empDataObj = getEmployeePayrollData(name);
+			if (result > 0 && empDataObj != null)
+				empDataObj.setSalary(salary);
+		} catch (Exception e) {
+			throw new DBServiceException("SQL Exception", DBServiceExceptionType.SQL_EXCEPTION);
+		}
+	}
+
 	private EmployeePayrollData getEmployeePayrollData(String name) {
 		return employeePayrollList.stream().filter(e -> e.getName().equals(name)).findFirst().orElse(null);
 	}
@@ -70,7 +85,7 @@ public class PayrollServiceDB {
 	public boolean isEmpPayrollSyncedWithDB(String name) throws DBServiceException {
 		boolean result = false;
 		try {
-			result =  viewEmployeePayrollByName(name).get(0).equals(getEmployeePayrollData(name));
+			result = viewEmployeePayrollByName(name).get(0).equals(getEmployeePayrollData(name));
 		} catch (IndexOutOfBoundsException e) {
 		} catch (Exception e) {
 			throw new DBServiceException("SQL Exception", DBServiceExceptionType.SQL_EXCEPTION);

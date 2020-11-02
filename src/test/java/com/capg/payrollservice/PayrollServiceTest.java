@@ -29,5 +29,12 @@ public class PayrollServiceTest {
 		boolean isSynced = payrollService.isEmpPayrollSyncedWithDB("Terisa");
 		assertTrue(isSynced);
 	}
+	
+	@Test
+	public void givenUpdatedSalary_WhenRetrieved_ShouldBeSyncedWithDBUsingPreparedStatement() throws DBServiceException{
+		payrollService.updateEmployeeSalaryUsingPreparedStatement("Terisa", 3000000.0);
+		boolean isSynced = payrollService.isEmpPayrollSyncedWithDB("Terisa");
+		assertTrue(isSynced);
+	}
 
 }
