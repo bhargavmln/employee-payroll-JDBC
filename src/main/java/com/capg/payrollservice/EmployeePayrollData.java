@@ -7,6 +7,7 @@ public class EmployeePayrollData {
 	private String name;
 	private double salary;
 	private LocalDate start_date;
+	private String gender;
 
 	public EmployeePayrollData(int emp_id, String name, double salary, LocalDate start) {
 		super();
@@ -14,6 +15,11 @@ public class EmployeePayrollData {
 		this.name = name;
 		this.salary = salary;
 		this.start_date = start;
+	}
+
+	public EmployeePayrollData(int id, String name, String gender, double salary, LocalDate start) {
+		this(id, name, salary, start);
+		this.setGender(gender);
 	}
 
 	public int getEmp_id() {
@@ -54,4 +60,42 @@ public class EmployeePayrollData {
 				+ start_date + "]";
 	}
 
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		EmployeePayrollData other = (EmployeePayrollData) obj;
+		if (emp_id != other.emp_id)
+			return false;
+		if (gender == null) {
+			if (other.gender != null)
+				return false;
+		} else if (!gender.equals(other.gender))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (Double.doubleToLongBits(salary) != Double.doubleToLongBits(other.salary))
+			return false;
+		if (start_date == null) {
+			if (other.start_date != null)
+				return false;
+		} else if (!start_date.equals(other.start_date))
+			return false;
+		return true;
+	}
 }
