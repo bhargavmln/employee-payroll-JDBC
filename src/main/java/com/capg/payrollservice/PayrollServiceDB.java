@@ -7,7 +7,9 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PayrollServiceDB {
 	EmployeePayrollData empDataObj = null;
@@ -131,5 +133,22 @@ public class PayrollServiceDB {
 			throw new DBServiceException("SQL Exception", DBServiceExceptionType.SQL_EXCEPTION);
 		}
 		return employeePayrollListByStartDate;
+	}
+	
+	public Map<String,Double> viewEmployeeDataGroupedByGender(String column , String operation) throws DBServiceException
+	{
+		Map<String,Double> empDataByGender = new HashMap<>();
+		String query = String.format("select gender , %s(%s) from Employee_Payroll group by gender;" , operation , column);
+		try(Connection con = new PayrollService().getConnection()) {
+			PreparedStatement preparedStatement = con.prepareStatement(query);
+			ResultSet resultSet = preparedStatement.executeQuery();
+			while(resultSet.next())
+			{
+				empDataByGender.put(resultSet.getString(1), resultSet.getDouble(2));
+			}
+		}catch (Exception e) {
+			throw new DBServiceException("SQL Exception", DBServiceExceptionType.SQL_EXCEPTION);
+		}
+		return empDataByGender;
 	}
 }
