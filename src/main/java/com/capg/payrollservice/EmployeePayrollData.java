@@ -35,8 +35,8 @@ public class EmployeePayrollData {
 	}
 
 
-	public EmployeePayrollData(int emp_id, String name, String gender, double salary, LocalDate start,int company_id, int id,
-			double basic_pay, double deductions, double taxable_pay, double tax, double net_pay,int emp_id2,String dept_name) {
+	public EmployeePayrollData(int emp_id, String name, String gender, double salary, LocalDate start, int id,
+			double basic_pay, double deductions, double taxable_pay, double tax, double net_pay) {
 		this(emp_id,name,gender,salary,start);
 		this.setId(id);
 		this.setBasic_pay(basic_pay);
@@ -44,10 +44,8 @@ public class EmployeePayrollData {
 		this.setTaxable_pay(taxable_pay);
 		this.setTax(tax);
 		this.setNet_pay(net_pay);
-		this.setCompany_id(company_id);
-		this.setDept_name(dept_name);
-		
 	}
+
 
 	public int getEmp_id() {
 		return emp_id;
