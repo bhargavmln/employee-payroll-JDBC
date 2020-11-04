@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -140,19 +141,71 @@ public class PayrollServiceDB {
 		return empDataByGender;
 	}
 
-	public void insertNewEmployeeToDB(String name, String gender, double salary, LocalDate start_date) throws DBServiceException {
-		String query = "insert into Employee_Payroll ( name , gender, salary , start) values (?,?,?,?)";
-		try (Connection con = PayrollService.getConnection()) {
-			PreparedStatement preparedStatement = con.prepareStatement(query);
-			preparedStatement.setString(1, name);
-			preparedStatement.setString(2, gender);
-			preparedStatement.setDouble(3, salary);
-			preparedStatement.setDate(4, Date.valueOf(start_date));
-			preparedStatement.executeUpdate();
-			empDataObj = new EmployeePayrollData(name, gender, salary, start_date);
-			viewEmployeePayroll().add(empDataObj);
-		} catch (Exception e) {
-			throw new DBServiceException("SQL Exception", DBServiceExceptionType.SQL_EXCEPTION);
+	public List<EmployeePayrollData> insertNewEmployeeToDB(String name, String gender, double salary,
+			LocalDate start_date) throws DBServiceException {
+		Connection con = null;
+		int empId = -1;
+		try {
+			con = PayrollService.getConnection();
+			con.setAutoCommit(false);
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+		String query = String.format(
+				"insert into Employee_Payroll(name , gender, salary , start)" + "values ('%s','%s','%s','%s');",
+				name, gender, salary, Date.valueOf(start_date));
+		try (Statement statement = con.createStatement()) {
+
+			int rowAffected = statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+			if (rowAffected == 1) {
+				ResultSet resultSet = statement.getGeneratedKeys();
+				if (resultSet.next())
+					empId = resultSet.getInt(1);
+				empDataObj = new EmployeePayrollData(name, gender, salary, start_date);
+				viewEmployeePayroll().add(empDataObj);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				con.rollback();
+				return viewEmployeePayroll();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+		}
+		try (Statement statement = con.createStatement()) {
+			double deductions = salary * 0.2;
+			double taxablePay = salary - deductions;
+			double tax = taxablePay * 0.1;
+			double netPay = taxablePay = tax;
+			String query1 = String.format(
+					"insert into payroll_details(id,basic_pay,deductions,taxable_pay,tax,net_pay)"
+							+ " values ('%s','%s','%s','%s','%s','%s');",
+					empId, salary, deductions, taxablePay, tax, netPay);
+			int rowAffected = statement.executeUpdate(query1);
+			if (rowAffected == 1) {
+				empDataObj = new EmployeePayrollData(empId, name, gender, salary, start_date);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				con.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+		}
+		try {
+			con.commit();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			if (con != null)
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+		}
+		return viewEmployeePayroll();
 	}
 }
