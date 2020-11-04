@@ -16,6 +16,14 @@ public class EmployeePayrollData {
 		this.salary = salary;
 		this.start_date = start;
 	}
+	
+	public EmployeePayrollData(String name,String gender, double salary, LocalDate start) {
+		super();
+		this.name = name;
+		this.salary = salary;
+		this.start_date = start;
+		this.gender = gender;
+	}
 
 	public EmployeePayrollData(int id, String name, String gender, double salary, LocalDate start) {
 		this(id, name, salary, start);
