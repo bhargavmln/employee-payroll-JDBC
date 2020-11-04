@@ -96,11 +96,19 @@ public class PayrollServiceTest {
 		Assert.assertEquals(1, empDataByGender.get("F"),0.0);
 	}
 	
+	@Ignore
 	@Test
 	public void insertedNewEmployee_WhenRetrieved_ShouldBeSyncedWithDB() throws DBServiceException{
 		payrollService.insertNewEmployeeToDB("Mark" , "M", .0 , LocalDate.now(),101,"Sales");
 		boolean isSynced = payrollService.isEmpPayrollSyncedWithDB("Mark");
 		assertTrue(isSynced);
+	}
+	
+	@Test
+	public void givenEmployeeId_WhenDeletedUsing_ShouldSyncWithDB() throws DBServiceException {
+		payrollService.removeEmployeeFromDB(2);
+		Assert.assertEquals(2,empPayrollList.size());
+		
 	}
 
 }
