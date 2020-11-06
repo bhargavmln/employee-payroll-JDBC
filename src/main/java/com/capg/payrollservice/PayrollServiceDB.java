@@ -312,14 +312,16 @@ public class PayrollServiceDB {
 		for (EmployeePayrollData employeeObj : EmpList) {
 			Runnable task = () -> {
 				addStatus.put(employeeObj.hashCode(), false);
+				System.out.println("Employee Being Added : "+Thread.currentThread().getName());
 				try {
 					this.insertNewEmployeeToDB(employeeObj.getName(), employeeObj.getGender(), employeeObj.getSalary(),
 							employeeObj.getStart_date());
 				} catch (DBServiceException e) {
 				}
 				addStatus.put(employeeObj.hashCode(), true);
+				System.out.println("Employee Added : "+Thread.currentThread().getName());
 			};
-			Thread thread = new Thread(task);
+			Thread thread = new Thread(task,employeeObj.getName());
 			thread.start();
 			while (addStatus.containsValue(false)) {
 				try {
