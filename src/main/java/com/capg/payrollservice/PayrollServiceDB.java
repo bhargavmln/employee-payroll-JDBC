@@ -312,16 +312,16 @@ public class PayrollServiceDB {
 		for (EmployeePayrollData employeeObj : EmpList) {
 			Runnable task = () -> {
 				addStatus.put(employeeObj.hashCode(), false);
-				System.out.println("Employee Being Added : "+Thread.currentThread().getName());
+				System.out.println("Employee Being Added : " + Thread.currentThread().getName());
 				try {
 					this.insertNewEmployeeToDB(employeeObj.getName(), employeeObj.getGender(), employeeObj.getSalary(),
 							employeeObj.getStart_date());
 				} catch (DBServiceException e) {
 				}
 				addStatus.put(employeeObj.hashCode(), true);
-				System.out.println("Employee Added : "+Thread.currentThread().getName());
+				System.out.println("Employee Added : " + Thread.currentThread().getName());
 			};
-			Thread thread = new Thread(task,employeeObj.getName());
+			Thread thread = new Thread(task, employeeObj.getName());
 			thread.start();
 			while (addStatus.containsValue(false)) {
 				try {
@@ -332,29 +332,53 @@ public class PayrollServiceDB {
 			}
 		}
 	}
-	
-	public void insertEmployeeToPayrollDetailsUsingThreads(List<EmployeePayrollData> EmpList) throws DBServiceException{
-		
-		Map<Integer,Boolean> employeeAdditionStatus = new HashMap<>();
+
+	public void insertEmployeeToPayrollDetailsUsingThreads(List<EmployeePayrollData> EmpList)
+			throws DBServiceException {
+
+		Map<Integer, Boolean> employeeAdditionStatus = new HashMap<>();
 		for (EmployeePayrollData employee : EmpList) {
-				
-		Runnable task = ()->{
-			employeeAdditionStatus.put(employee.hashCode(),false);
-			try {
-				this.insertNewEmployeeToDB(employee.getName(),employee.getGender(),employee.getSalary(),
-										   employee.getStart_date(),employee.getCompany_id(),employee.getDept_name());
-			} catch (DBServiceException e) {
+
+			Runnable task = () -> {
+				employeeAdditionStatus.put(employee.hashCode(), false);
+				try {
+					this.insertNewEmployeeToDB(employee.getName(), employee.getGender(), employee.getSalary(),
+							employee.getStart_date(), employee.getCompany_id(), employee.getDept_name());
+				} catch (DBServiceException e) {
+				}
+				employeeAdditionStatus.put(employee.hashCode(), true);
+			};
+
+			Thread thread = new Thread(task, employee.getName());
+			thread.start();
+			while (employeeAdditionStatus.containsValue(false)) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
-			employeeAdditionStatus.put(employee.hashCode(),true);
-		};
-		
-		Thread thread=new Thread(task,employee.getName());
-		thread.start();
-		while(employeeAdditionStatus.containsValue(false)) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+		}
+	}
+
+	public void updateEmployeeDataUsingThreads(List<EmployeePayrollData> EmpList) {
+		Map<Integer, Boolean> addStatus = new HashMap<>();
+		for (EmployeePayrollData employeeObj : EmpList) {
+			Runnable task = () -> {
+				addStatus.put(employeeObj.hashCode(), false);
+				try {
+					this.updateEmployeeSalaryUsingPreparedStatement(employeeObj.getName(), employeeObj.getSalary());
+				} catch (DBServiceException e) {
+				}
+				addStatus.put(employeeObj.hashCode(), true);
+			};
+			Thread thread = new Thread(task, employeeObj.getName());
+			thread.start();
+			while (addStatus.containsValue(false)) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 		}
