@@ -265,4 +265,46 @@ public class PayrollServiceDB {
 			throw new DBServiceException("SQL Exception", DBServiceExceptionType.SQL_EXCEPTION);
 		}
 	}
+	
+	public List<EmployeePayrollData> insertNewEmployeeToDBWithoutThread(String name,String gender,double salary, LocalDate start_date) throws DBServiceException
+	{
+	List<EmployeePayrollData> list = new ArrayList<EmployeePayrollData>();
+	Connection con = null;
+	int empId= -1;
+	try {
+	con =PayrollService.getConnection();
+	con.setAutoCommit(false);
+	}
+	catch (SQLException e) {
+	e.printStackTrace();
+	}
+	String query = String.format("insert into Employee_Payroll(name , gender, salary , start)" + 
+						"values ('%s','%s','%s','%s');",name,gender,salary,Date.valueOf(start_date));
+	try(Statement statement = con.createStatement()) {
+	
+	int rowAffected = statement.executeUpdate(query , Statement.RETURN_GENERATED_KEYS);
+	if(rowAffected == 1)
+	{
+	ResultSet resultSet = statement.getGeneratedKeys();
+	if(resultSet.next())
+	empId  = resultSet.getInt(1);
+	empDataObj = new EmployeePayrollData( name, gender ,salary,start_date);
+	list.add(empDataObj);
+	}
+	}catch (SQLException e) {
+	e.printStackTrace();
+	try {
+	con.rollback();
+	return viewEmployeePayroll();
+	}catch (SQLException e1) {
+	e1.printStackTrace();
+	}
+	}
+	return list;
+}
+public void addEmployeeToPayroll(List<EmployeePayrollData> EmpList) throws DBServiceException {
+	for (EmployeePayrollData emp:EmpList) {
+		insertNewEmployeeToDBWithoutThread(emp.getName(),emp.getGender(),emp.getSalary(),emp.getStart_date());
+	}
+}
 }
