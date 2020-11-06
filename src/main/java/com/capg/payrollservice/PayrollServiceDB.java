@@ -140,17 +140,15 @@ public class PayrollServiceDB {
 		}
 		return empDataByGender;
 	}
-	
-	public List<EmployeePayrollData> viewEmployeeAndPayrollDetailsByName(String name) throws DBServiceException
-	{
+
+	public List<EmployeePayrollData> viewEmployeeAndPayrollDetailsByName(String name) throws DBServiceException {
 		List<EmployeePayrollData> empPayrollDetailsListByName = new ArrayList<>();
 		String query = "select * from Employee_Payroll , payroll_details where name = ?";
-		try(Connection con = PayrollService.getConnection()) {
+		try (Connection con = PayrollService.getConnection()) {
 			PreparedStatement preparedStatement = con.prepareStatement(query);
-			preparedStatement.setString(1, name );
+			preparedStatement.setString(1, name);
 			ResultSet resultSet = preparedStatement.executeQuery();
-			if(resultSet.next())
-			{
+			if (resultSet.next()) {
 				int id = resultSet.getInt(1);
 				String gender = resultSet.getString(3);
 				double salary = resultSet.getDouble(4);
@@ -161,7 +159,8 @@ public class PayrollServiceDB {
 				double taxable_pay = resultSet.getDouble(9);
 				double tax = resultSet.getDouble(10);
 				double net_pay = resultSet.getDouble(11);
-				empDataObj = new EmployeePayrollData(id, name, gender ,salary,start,emp_id,basic_pay,deductions,taxable_pay,tax,net_pay);
+				empDataObj = new EmployeePayrollData(id, name, gender, salary, start, emp_id, basic_pay, deductions,
+						taxable_pay, tax, net_pay);
 				empPayrollDetailsListByName.add(empDataObj);
 			}
 		} catch (Exception e) {
@@ -255,56 +254,80 @@ public class PayrollServiceDB {
 		}
 		return viewEmployeePayroll();
 	}
-	
-	public void removeEmployeeFromDB(int empId) throws DBServiceException{
-		String query = String.format("update Employee_Payroll set is_active = false WHERE id= '%s';",empId);
-		try(Connection connection=PayrollService.getConnection()){
+
+	public void removeEmployeeFromDB(int empId) throws DBServiceException {
+		String query = String.format("update Employee_Payroll set is_active = false WHERE id= '%s';", empId);
+		try (Connection connection = PayrollService.getConnection()) {
 			PreparedStatement preparedStatement = connection.prepareStatement(query);
 			preparedStatement.executeUpdate();
-		}catch (SQLException e) {
+		} catch (SQLException e) {
 			throw new DBServiceException("SQL Exception", DBServiceExceptionType.SQL_EXCEPTION);
 		}
 	}
-	
-	public List<EmployeePayrollData> insertNewEmployeeToDBWithoutThread(String name,String gender,double salary, LocalDate start_date) throws DBServiceException
-	{
-	List<EmployeePayrollData> list = new ArrayList<EmployeePayrollData>();
-	Connection con = null;
-	int empId= -1;
-	try {
-	con =PayrollService.getConnection();
-	con.setAutoCommit(false);
+
+	public List<EmployeePayrollData> insertNewEmployeeToDB(String name, String gender, double salary,
+			LocalDate start_date) throws DBServiceException {
+		List<EmployeePayrollData> list = new ArrayList<EmployeePayrollData>();
+		Connection con = null;
+		int empId = -1;
+		try {
+			con = PayrollService.getConnection();
+			con.setAutoCommit(false);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		String query = String.format(
+				"insert into Employee_Payroll(name , gender, salary , start)" + "values ('%s','%s','%s','%s');", name,
+				gender, salary, Date.valueOf(start_date));
+		try (Statement statement = con.createStatement()) {
+
+			int rowAffected = statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+			if (rowAffected == 1) {
+				ResultSet resultSet = statement.getGeneratedKeys();
+				if (resultSet.next())
+					empId = resultSet.getInt(1);
+				empDataObj = new EmployeePayrollData(name, gender, salary, start_date);
+				list.add(empDataObj);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			try {
+				con.rollback();
+				return viewEmployeePayroll();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+		}
+		return list;
 	}
-	catch (SQLException e) {
-	e.printStackTrace();
+
+	public void addEmployeeToPayroll(List<EmployeePayrollData> EmpList) throws DBServiceException {
+		for (EmployeePayrollData emp : EmpList) {
+			insertNewEmployeeToDB(emp.getName(), emp.getGender(), emp.getSalary(), emp.getStart_date());
+		}
 	}
-	String query = String.format("insert into Employee_Payroll(name , gender, salary , start)" + 
-						"values ('%s','%s','%s','%s');",name,gender,salary,Date.valueOf(start_date));
-	try(Statement statement = con.createStatement()) {
-	
-	int rowAffected = statement.executeUpdate(query , Statement.RETURN_GENERATED_KEYS);
-	if(rowAffected == 1)
-	{
-	ResultSet resultSet = statement.getGeneratedKeys();
-	if(resultSet.next())
-	empId  = resultSet.getInt(1);
-	empDataObj = new EmployeePayrollData( name, gender ,salary,start_date);
-	list.add(empDataObj);
+
+	public void addEmployeeToPayrollUsingThreads(List<EmployeePayrollData> EmpList) throws DBServiceException {
+		Map<Integer, Boolean> addStatus = new HashMap<>();
+		for (EmployeePayrollData employeeObj : EmpList) {
+			Runnable task = () -> {
+				addStatus.put(employeeObj.hashCode(), false);
+				try {
+					this.insertNewEmployeeToDB(employeeObj.getName(), employeeObj.getGender(), employeeObj.getSalary(),
+							employeeObj.getStart_date());
+				} catch (DBServiceException e) {
+				}
+				addStatus.put(employeeObj.hashCode(), true);
+			};
+			Thread thread = new Thread(task);
+			thread.start();
+			while (addStatus.containsValue(false)) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
-	}catch (SQLException e) {
-	e.printStackTrace();
-	try {
-	con.rollback();
-	return viewEmployeePayroll();
-	}catch (SQLException e1) {
-	e1.printStackTrace();
-	}
-	}
-	return list;
-}
-public void addEmployeeToPayroll(List<EmployeePayrollData> EmpList) throws DBServiceException {
-	for (EmployeePayrollData emp:EmpList) {
-		insertNewEmployeeToDBWithoutThread(emp.getName(),emp.getGender(),emp.getSalary(),emp.getStart_date());
-	}
-}
 }

@@ -115,6 +115,7 @@ public class PayrollServiceTest {
 		
 	}
 	
+	@Ignore
 	@Test
 	public void givenEmployeeData_ShouldPrintInstanceTime_ToConsole() throws DBServiceException {
 		EmployeePayrollData[] arrayOfEmp = {
@@ -130,5 +131,20 @@ public class PayrollServiceTest {
 		Instant end = Instant.now();
 		System.out.println("Duration Without Thread: "+java.time.Duration.between(start, end));
 	}
-
+	
+	@Test
+	public void givenEmployeeData_ShouldPrintInstanceTime_ToConsoleUsingThreads() throws DBServiceException {
+		EmployeePayrollData[] arrayOfEmp = {
+				new EmployeePayrollData("Jeff Bezos","M", 100000.0, LocalDate.now()),
+				new EmployeePayrollData("Bill Gates","M", 200000.0, LocalDate.now()),
+				new EmployeePayrollData("Mark Zuckerberg","M", 300000.0, LocalDate.now()),
+				new EmployeePayrollData("Sundar","M", 600000.0, LocalDate.now()),
+				new EmployeePayrollData("Mukesh","M", 500000.0, LocalDate.now()),
+				new EmployeePayrollData("Anil","M", 300000.0, LocalDate.now())
+		};
+		Instant start = Instant.now();
+		payrollService.addEmployeeToPayrollUsingThreads(Arrays.asList(arrayOfEmp));
+		Instant end = Instant.now();
+		System.out.println("Duration Without Thread: "+java.time.Duration.between(start, end));
+	}
 }
